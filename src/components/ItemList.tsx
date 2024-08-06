@@ -24,7 +24,7 @@ const ItemList: React.FC<ItemListProps> = ({
     const clientHeight = container.clientHeight;
     const scrollTop = container.scrollTop;
 
-    if (clientHeight + scrollTop >= scrollHeight) {
+    if (clientHeight + scrollTop + 5 >= scrollHeight) {
       loadNextPage();
     }
   }, [loadNextPage]);
