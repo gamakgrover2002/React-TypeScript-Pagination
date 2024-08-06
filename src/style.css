@@ -45,7 +45,7 @@ body {
 
 .item-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, 2fr);
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 20px;
   padding: 1rem;
   margin: 0;
@@ -164,11 +164,19 @@ body {
     margin: 1rem auto;
     padding: 1.5rem;
   }
+
+  .item-list {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  }
 }
 
 @media (max-width: 480px) {
   .main-page {
     margin: 0.5rem auto;
     padding: 1rem;
+  }
+
+  .item-list {
+    grid-template-columns: 1fr;
   }
 }
