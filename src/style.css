@@ -41,6 +41,9 @@ body {
   border: 1px solid var(--color-border);
   border-radius: var(--border-radius);
   box-shadow: 0 6px 12px var(--color-box-shadow);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh; /* Ensure the container takes up at least the full viewport height */
 }
 
 .item-list {
@@ -51,7 +54,7 @@ body {
   margin: 0;
   list-style-type: none;
   height: 500px;
-  overflow-x: auto;
+  overflow-y: auto; /* Changed to vertical scroll for item list */
   background-color: var(--color-background);
 }
 
@@ -76,15 +79,26 @@ body {
   box-shadow: 0 8px 16px var(--item-hover-shadow);
 }
 
-.pagination {
+/* Layout for pagination and options */
+
+.pagination-container {
   display: flex;
   justify-content: space-between;
+  align-items: center;
+  margin-top: 1rem;
+  padding: 1rem 0;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center; /* Center pagination controls */
   align-items: center;
   padding: 1rem;
   background-color: #fff;
   border: 1px solid var(--color-border);
   border-radius: var(--border-radius);
   box-shadow: 0 6px 12px var(--color-box-shadow);
+  overflow-x: auto; /* Horizontal scrolling for pagination */
 }
 
 .pagination button {
@@ -112,7 +126,7 @@ body {
   padding: 0;
   margin: 0;
   display: flex;
-  overflow-x: auto;
+  overflow-x: auto; /* Enable horizontal scrolling */
   white-space: nowrap;
   scroll-behavior: smooth;
 }
@@ -157,6 +171,24 @@ body {
   background-color: var(--color-primary-hover);
   outline: none;
   transform: scale(1.05);
+}
+
+/* Additional CSS for Options */
+
+.options {
+  display: flex;
+  align-items: center;
+  margin-right: 1rem; /* Space between options and item list */
+}
+
+.options label {
+  margin-right: 0.5rem;
+}
+
+.options select {
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
 }
 
 @media (max-width: 768px) {

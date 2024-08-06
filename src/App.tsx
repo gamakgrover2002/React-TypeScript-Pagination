@@ -1,7 +1,7 @@
-// src/App.tsx
 import React, { useState, useEffect } from "react";
 import ItemList from "./components/ItemList";
 import Pagination from "./components/Pagination";
+import Options from "./components/Options"; // Import Options component
 import { Data } from "./Models/Data";
 import FetchItems from "./api/fetchItems";
 import { BaseAPI } from "./api/BaseAPI";
@@ -32,7 +32,7 @@ const App: React.FC = () => {
   };
 
   const fetchData = async () => {
-    if (currentPage >= totalPages && currentPage !== 1) {
+    if (currentPage > totalPages && currentPage !== 1) {
       setCurrentPage(totalPages);
       return;
     }
@@ -47,6 +47,7 @@ const App: React.FC = () => {
       setData(newData);
     }
   };
+
   useEffect(() => {
     fetchData();
   }, [currentPage, limit]);
@@ -63,11 +64,15 @@ const App: React.FC = () => {
         <div>Error: {error}</div>
       ) : (
         <>
+          <Options limit={limit} setLimit={setLimit} />{" "}
+          {/* Place Options at the top */}
           <ItemList
             totalPages={totalPages}
             cache={cache}
             currentPage={currentPage}
+            itemsPerPage={limit} // Pass the limit to ItemList
             loadNextPage={loadNextPage}
+            loadPrevPage={loadPrevPage}
             setCurrentPage={setCurrentPage}
           />
           <Pagination
@@ -76,7 +81,8 @@ const App: React.FC = () => {
             loadPage={loadPage}
             totalPages={totalPages}
             currentPage={currentPage}
-          />
+          />{" "}
+          {/* Place Pagination at the bottom */}
         </>
       )}
     </div>

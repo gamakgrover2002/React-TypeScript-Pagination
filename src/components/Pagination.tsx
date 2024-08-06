@@ -1,6 +1,11 @@
-import React, { useState, useEffect } from "react";
-import { PaginationProps } from "../Models/PaginationProps";
-
+import React, { useEffect, useRef } from "react";
+export interface PaginationProps {
+  loadNextPage: () => void;
+  loadPrevPage: () => void;
+  loadPage: (num: number) => void;
+  totalPages: number;
+  currentPage: number;
+}
 const Pagination: React.FC<PaginationProps> = ({
   loadNextPage,
   loadPrevPage,
@@ -8,36 +13,43 @@ const Pagination: React.FC<PaginationProps> = ({
   totalPages,
   currentPage,
 }) => {
-  const [pageNumbers, setPageNumbers] = useState<number[]>([]);
+  const paginationRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    let numbers = [];
-    for (let i = 1; i <= totalPages; i++) {
-      numbers.push(i);
+    const pagination = paginationRef.current;
+    if (pagination) {
+      const pageButtons = pagination.querySelectorAll("button");
+      if (pageButtons.length > 0) {
+        const currentButton = pageButtons[currentPage - 1];
+        if (currentButton) {
+          pagination.scrollTo({
+            left:
+              currentButton.offsetLeft -
+              pagination.offsetWidth / 2 +
+              currentButton.offsetWidth / 2,
+            behavior: "smooth",
+          });
+        }
+      }
     }
-    setPageNumbers(numbers);
-  }, [totalPages]);
+  }, [currentPage, totalPages]);
 
   return (
-    <div className="pagination">
+    <div className="pagination" ref={paginationRef}>
       <button onClick={loadPrevPage} disabled={currentPage === 1}>
         Prev
       </button>
       <ul>
-        {pageNumbers.length === 0 ? (
-          <li>No pages</li>
-        ) : (
-          pageNumbers.map((pageNumber) => (
-            <li key={pageNumber}>
-              <button
-                onClick={() => loadPage(pageNumber)}
-                className={currentPage === pageNumber ? "active" : ""}
-              >
-                {pageNumber}
-              </button>
-            </li>
-          ))
-        )}
+        {[...Array(totalPages).keys()].map((pageNumber) => (
+          <li key={pageNumber + 1}>
+            <button
+              onClick={() => loadPage(pageNumber + 1)}
+              className={currentPage === pageNumber + 1 ? "active" : ""}
+            >
+              {pageNumber + 1}
+            </button>
+          </li>
+        ))}
       </ul>
       <button onClick={loadNextPage} disabled={currentPage === totalPages}>
         Next

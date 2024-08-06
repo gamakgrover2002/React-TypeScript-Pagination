@@ -6,7 +6,9 @@ interface ItemListProps {
   totalPages: number;
   cache: Map<number, Data[]>;
   currentPage: number;
+  itemsPerPage: number; // Added itemsPerPage
   loadNextPage: () => void;
+  loadPrevPage: () => void;
   setCurrentPage: (num: number) => void;
 }
 
@@ -14,69 +16,97 @@ const ItemList: React.FC<ItemListProps> = ({
   totalPages,
   cache,
   currentPage,
+  itemsPerPage,
   loadNextPage,
+  loadPrevPage,
   setCurrentPage,
 }) => {
   const [listData, setListData] = useState<Data[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const containerRef = useRef<HTMLUListElement>(null);
-  const handleScrollTimeout = useRef<NodeJS.Timeout | null>(null);
+  const pageOffsets = useRef<number[]>([]); // Offsets for each page
+  const previousScrollTop = useRef<number>(0); // To keep track of scroll position
 
   const handleScroll = useCallback(() => {
     if (loading || !containerRef.current) return;
 
     const container = containerRef.current;
-    const scrollHeight = container.scrollHeight;
-    const clientHeight = container.clientHeight;
     const scrollTop = container.scrollTop;
+    const containerHeight = container.clientHeight;
 
-    if (clientHeight + scrollTop + 5 >= scrollHeight) {
-      setLoading(true);
-      loadNextPage();
+    // Determine if we need to load the next or previous page
+    if (scrollTop + containerHeight + 5 >= container.scrollHeight) {
+      if (currentPage < totalPages && !loading) {
+        setLoading(true);
+        loadNextPage();
+      }
+    } else if (scrollTop <= 5) {
+      if (currentPage > 1 && !loading) {
+        setLoading(true);
+        loadPrevPage();
+      }
     }
-  }, [loading, loadNextPage]);
 
-  const debouncedHandleScroll = useCallback(() => {
-    if (handleScrollTimeout.current) {
-      clearTimeout(handleScrollTimeout.current);
+    // Detect scroll position to change the page
+    const currentOffset = pageOffsets.current.findIndex(
+      (offset) => scrollTop < offset
+    );
+    if (currentOffset !== -1 && currentOffset + 1 !== currentPage) {
+      setCurrentPage(currentOffset + 1);
     }
-    handleScrollTimeout.current = setTimeout(() => {
-      handleScroll();
-    }, 500);
-  }, [handleScroll]);
+  }, [loading, loadNextPage, loadPrevPage, currentPage, totalPages]);
+
+  useEffect(() => {
+    // Save the current scroll position before the list is updated
+    if (containerRef.current) {
+      previousScrollTop.current = containerRef.current.scrollTop;
+    }
+  }, [listData]);
 
   useEffect(() => {
     const container = containerRef.current;
     if (container) {
-      container.addEventListener("scroll", debouncedHandleScroll);
+      container.addEventListener("scroll", handleScroll);
+      return () => {
+        container.removeEventListener("scroll", handleScroll);
+      };
     }
-    return () => {
-      if (container) {
-        container.removeEventListener("scroll", debouncedHandleScroll);
-      }
-    };
-  }, [debouncedHandleScroll]);
+  }, [handleScroll]);
 
   useEffect(() => {
+    // Update listData when cache or currentPage changes
     const sortedCache = new Map(
       [...cache.entries()].sort((a, b) => a[0] - b[0])
     );
     const data: Data[] = [];
-    sortedCache.forEach((value: any) => {
+    sortedCache.forEach((value) => {
       data.push(...value);
     });
     setListData(data);
 
+    // Calculate page offsets based on the rendered data
     if (containerRef.current) {
       const container = containerRef.current;
-      const pageHeight = container.scrollHeight / sortedCache.size;
-      const scrollToPosition = pageHeight * (currentPage - 1);
-      container.scrollTo({
-        top: scrollToPosition,
+      const newPageOffsets: number[] = [];
+      let accumulatedHeight = 0;
+
+      for (let i = 0; i < data.length; i += itemsPerPage) {
+        newPageOffsets.push(accumulatedHeight);
+        accumulatedHeight += container.clientHeight; // Assumes each page is the height of the container
+      }
+      pageOffsets.current = newPageOffsets;
+    }
+  }, [cache, currentPage, itemsPerPage]);
+
+  useEffect(() => {
+    // Restore the previous scroll position after listData is updated
+    if (containerRef.current) {
+      containerRef.current.scrollTo({
+        top: previousScrollTop.current,
         behavior: "smooth",
       });
     }
-  }, [cache, currentPage]);
+  }, [listData]);
 
   useEffect(() => {
     if (loading) {
@@ -86,23 +116,6 @@ const ItemList: React.FC<ItemListProps> = ({
       return () => clearTimeout(timer);
     }
   }, [loading]);
-
-  useEffect(() => {
-    const pagination = document.getElementsByClassName("pagination");
-    if (pagination.length > 0) {
-      const scroll = (pagination[0].scrollWidth / totalPages) * currentPage;
-      pagination[0].scrollTo({
-        left: scroll,
-        behavior: "smooth",
-      });
-    }
-  }, [currentPage, totalPages]);
-
-  useEffect(() => {
-    if (containerRef.current) {
-      console.log("Client Height:", containerRef.current.scrollTop);
-    }
-  }, [listData]);
 
   return (
     <ul className="item-list" ref={containerRef}>
