@@ -64,9 +64,11 @@ const App: React.FC = () => {
       ) : (
         <>
           <ItemList
+            totalPages={totalPages}
             cache={cache}
             currentPage={currentPage}
             loadNextPage={loadNextPage}
+            setCurrentPage={setCurrentPage}
           />
           <Pagination
             loadNextPage={loadNextPage}

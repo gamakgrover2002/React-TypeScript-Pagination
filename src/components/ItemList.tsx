@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Data } from "../Models/Data";
+import Pagination from "./Pagination";
 
 interface ItemListProps {
+  totalPages: number;
   cache: Map<number, Data[]>;
   currentPage: number;
   loadNextPage: () => void;
@@ -9,26 +11,16 @@ interface ItemListProps {
 }
 
 const ItemList: React.FC<ItemListProps> = ({
+  totalPages,
   cache,
   currentPage,
   loadNextPage,
   setCurrentPage,
 }) => {
   const [listData, setListData] = useState<Data[]>([]);
-  const [totalPagesRendered, setTotalPages] = useState(1);
-  const [loading, setLoading] = useState(false);
-  const [rendered, setRendered] = useState<number[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
   const containerRef = useRef<HTMLUListElement>(null);
-
-  const scrollPagination = (num: number): void => {
-    const pageContainer = document.getElementsByClassName("pagination")[0];
-    const sizebuttons = document.getElementsByTagName("li")[0].offsetWidth;
-    const pageWidth = pageContainer.scrollWidth / 3;
-    const scrollToPosition = pageWidth * num;
-    pageContainer.scrollTo({
-      left: scrollToPosition,
-    });
-  };
+  const handleScrollTimeout = useRef<NodeJS.Timeout | null>(null);
 
   const handleScroll = useCallback(() => {
     if (loading || !containerRef.current) return;
@@ -41,48 +33,50 @@ const ItemList: React.FC<ItemListProps> = ({
     if (clientHeight + scrollTop + 5 >= scrollHeight) {
       setLoading(true);
       loadNextPage();
-      scrollPagination(currentPage + 1);
     }
-  }, [loading, loadNextPage, currentPage]);
+  }, [loading, loadNextPage]);
+
+  const debouncedHandleScroll = useCallback(() => {
+    if (handleScrollTimeout.current) {
+      clearTimeout(handleScrollTimeout.current);
+    }
+    handleScrollTimeout.current = setTimeout(() => {
+      handleScroll();
+    }, 500);
+  }, [handleScroll]);
 
   useEffect(() => {
     const container = containerRef.current;
     if (container) {
-      container.addEventListener("scroll", handleScroll);
+      container.addEventListener("scroll", debouncedHandleScroll);
     }
     return () => {
       if (container) {
-        container.removeEventListener("scroll", handleScroll);
+        container.removeEventListener("scroll", debouncedHandleScroll);
       }
     };
-  }, [handleScroll]);
+  }, [debouncedHandleScroll]);
 
   useEffect(() => {
     const sortedCache = new Map(
       [...cache.entries()].sort((a, b) => a[0] - b[0])
     );
     const data: Data[] = [];
-    sortedCache.forEach((value) => {
+    sortedCache.forEach((value: any) => {
       data.push(...value);
     });
     setListData(data);
-    setTotalPages(sortedCache.size);
-
-    if (!rendered.includes(currentPage)) {
-      setRendered([...rendered, currentPage]);
-    }
 
     if (containerRef.current) {
       const container = containerRef.current;
-      const scrollHeight = container.scrollHeight;
-      const scrollToPosition =
-        (scrollHeight / totalPagesRendered) * (currentPage - 1);
+      const pageHeight = container.scrollHeight / sortedCache.size;
+      const scrollToPosition = pageHeight * (currentPage - 1);
       container.scrollTo({
         top: scrollToPosition,
         behavior: "smooth",
       });
     }
-  }, [cache, currentPage, rendered, totalPagesRendered]);
+  }, [cache, currentPage]);
 
   useEffect(() => {
     if (loading) {
@@ -92,6 +86,23 @@ const ItemList: React.FC<ItemListProps> = ({
       return () => clearTimeout(timer);
     }
   }, [loading]);
+
+  useEffect(() => {
+    const pagination = document.getElementsByClassName("pagination");
+    if (pagination.length > 0) {
+      const scroll = (pagination[0].scrollWidth / totalPages) * currentPage;
+      pagination[0].scrollTo({
+        left: scroll,
+        behavior: "smooth",
+      });
+    }
+  }, [currentPage, totalPages]);
+
+  useEffect(() => {
+    if (containerRef.current) {
+      console.log("Client Height:", containerRef.current.scrollTop);
+    }
+  }, [listData]);
 
   return (
     <ul className="item-list" ref={containerRef}>
