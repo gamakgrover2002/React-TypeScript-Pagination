@@ -15,15 +15,16 @@ const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(0);
   const [data, setData] = useState<DataList>([]);
+  const [error, setError] = useState<string | null>(null);
 
   const totalData = BaseAPI.totalData;
 
   const loadNextPage = () => {
-    setCurrentPage((prevPage) => Math.min(prevPage + 1, totalPages));
+    setCurrentPage(currentPage + 1);
   };
 
   const loadPrevPage = () => {
-    setCurrentPage((prevPage) => Math.max(prevPage - 1, 1));
+    setCurrentPage(currentPage - 1);
   };
 
   const loadPage = (num: number) => {
@@ -43,7 +44,7 @@ const App: React.FC = () => {
         setData(newData);
       }
     } catch (error) {
-      console.error(error);
+      setError(error.message);
     }
   };
 
@@ -59,14 +60,24 @@ const App: React.FC = () => {
 
   return (
     <div className="main-page">
-      <ItemList cache={cache} currentPage={currentPage} />
-      <Pagination
-        loadNextPage={loadNextPage}
-        loadPrevPage={loadPrevPage}
-        loadPage={loadPage}
-        totalPages={totalPages}
-        currentPage={currentPage}
-      />
+      {error ? (
+        <div>Error: {error}</div>
+      ) : (
+        <>
+          <ItemList
+            cache={cache}
+            currentPage={currentPage}
+            loadNextPage={loadNextPage}
+          />
+          <Pagination
+            loadNextPage={loadNextPage}
+            loadPrevPage={loadPrevPage}
+            loadPage={loadPage}
+            totalPages={totalPages}
+            currentPage={currentPage}
+          />
+        </>
+      )}
     </div>
   );
 };

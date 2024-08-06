@@ -1,17 +1,36 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { DataList } from "../Models/DataList";
 
 interface ItemListProps {
   cache: Map<number, DataList>;
   currentPage: number;
+  loadNextPage: () => void;
 }
 
-const ItemList: React.FC<ItemListProps> = ({ cache, currentPage }) => {
-  const [listData, setListData] = useState<DataList>([]);
-  const [total, setTotal] = useState(1);
+const ItemList: React.FC<ItemListProps> = ({
+  cache,
+  currentPage,
+  loadNextPage,
+}) => {
+  const [listData, setListData] = useState<DataList[]>([]);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(false);
+
+  const handleScroll = useCallback(() => {
+    const container = document.getElementsByClassName(
+      "item-list"
+    )[0] as HTMLElement;
+    const scrollHeight = container.scrollHeight;
+    const clientHeight = container.clientHeight;
+    const scrollTop = container.scrollTop;
+
+    if (clientHeight + scrollTop >= scrollHeight) {
+      loadNextPage();
+    }
+  }, [loadNextPage]);
 
   useEffect(() => {
-    const data: DataList = [];
+    const data: DataList[] = [];
     const sortedCache = new Map(
       [...cache.entries()].sort((a, b) => a[0] - b[0])
     );
@@ -19,22 +38,49 @@ const ItemList: React.FC<ItemListProps> = ({ cache, currentPage }) => {
       data.push(...value);
     });
     setListData(data);
-    setTotal(sortedCache.size);
-  }, [cache, currentPage]);
+    setTotalPages(sortedCache.size);
+  }, [cache]);
 
   useEffect(() => {
-    const container: Element = document.getElementsByClassName("item-list")[0];
-    const x: number = container.scrollHeight;
-    console.log(currentPage * (x / total));
-  }, [currentPage, total]);
+    const container = document.getElementsByClassName(
+      "item-list"
+    )[0] as HTMLElement;
+    container.addEventListener("scroll", handleScroll);
+    return () => {
+      container.removeEventListener("scroll", handleScroll);
+    };
+  }, [handleScroll]);
+
+  useEffect(() => {
+    if (loading) {
+      const container = document.getElementsByClassName(
+        "item-list"
+      )[0] as HTMLElement;
+
+      const handleDataLoaded = () => setLoading(false);
+
+      container.addEventListener("dataLoaded", handleDataLoaded);
+
+      return () => {
+        container.removeEventListener("dataLoaded", handleDataLoaded);
+      };
+    }
+  }, [loading]);
+
+  useEffect(() => {
+    const container = document.getElementsByClassName(
+      "item-list"
+    )[0] as HTMLElement;
+  }, [currentPage, totalPages]);
 
   return (
     <ul className="item-list">
-      {listData.map((item) => (
-        <li key={item.id} className="item-list-item">
+      {listData.map((item, index) => (
+        <li key={`${item.id}-${index}`} className="item-list-item">
           {item.title}
         </li>
       ))}
+      {loading && <li>Loading...</li>}
     </ul>
   );
 };
