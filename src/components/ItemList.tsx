@@ -1,30 +1,32 @@
-import React, { useState, useEffect, useRef, Key } from "react";
+import React, { useState, useEffect } from "react";
 import { DataList } from "../Models/DataList";
 
 interface ItemListProps {
   cache: Map<number, DataList>;
-  currentPage: number; // Corrected type
+  currentPage: number;
 }
 
 const ItemList: React.FC<ItemListProps> = ({ cache, currentPage }) => {
   const [listData, setListData] = useState<DataList>([]);
-  const [total, settotal] = useState(1);
+  const [total, setTotal] = useState(1);
 
   useEffect(() => {
     const data: DataList = [];
-    const sortedCache = new Map([...cache.entries()].sort());
+    const sortedCache = new Map(
+      [...cache.entries()].sort((a, b) => a[0] - b[0])
+    );
     sortedCache.forEach((value) => {
       data.push(...value);
     });
     setListData(data);
-    settotal(total + 1);
+    setTotal(sortedCache.size);
   }, [cache, currentPage]);
 
   useEffect(() => {
     const container: Element = document.getElementsByClassName("item-list")[0];
     const x: number = container.scrollHeight;
     console.log(currentPage * (x / total));
-  }, [currentPage]);
+  }, [currentPage, total]);
 
   return (
     <ul className="item-list">
