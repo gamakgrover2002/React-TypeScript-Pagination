@@ -5,6 +5,7 @@ import Pagination from "./components/Pagination";
 import { DataList } from "./Models/DataList";
 import FetchItems from "./api/fetchItems";
 import { BaseAPI } from "./api/BaseAPI";
+
 import "./style.css";
 
 const App: React.FC = () => {
@@ -58,7 +59,7 @@ const App: React.FC = () => {
 
   return (
     <div className="main-page">
-      <ItemList data={data} />
+      <ItemList cache={cache} currentPage={currentPage} />
       <Pagination
         loadNextPage={loadNextPage}
         loadPrevPage={loadPrevPage}
